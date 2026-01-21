@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-const basePath = process.env.BASE_PATH || ""
+const rawBasePath = (process.env.BASE_PATH || "").trim()
+const normalizedBasePath = rawBasePath === "/" ? "" : rawBasePath.replace(/\/$/, "")
+const basePath = normalizedBasePath ? (normalizedBasePath.startsWith("/") ? normalizedBasePath : `/${normalizedBasePath}`) : ""
 const assetPrefix = basePath || undefined
 
 const nextConfig = {
