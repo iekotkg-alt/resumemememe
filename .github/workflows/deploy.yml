@@ -37,7 +37,9 @@ jobs:
 
       - name: Set base path
         run: |
-          if [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+          if [[ -n "${{ vars.CUSTOM_DOMAIN }}" ]]; then
+            echo "BASE_PATH=" >> $GITHUB_ENV
+          elif [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
             echo "BASE_PATH=" >> $GITHUB_ENV
           else
             echo "BASE_PATH=/${{ github.event.repository.name }}" >> $GITHUB_ENV
@@ -48,6 +50,10 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Add CNAME for custom domain
+        if: ${{ vars.CUSTOM_DOMAIN != '' }}
+        run: echo "${{ vars.CUSTOM_DOMAIN }}" > ./out/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
