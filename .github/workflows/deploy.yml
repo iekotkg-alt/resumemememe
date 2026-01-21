@@ -1,66 +1,64 @@
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: ["main"]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Set base path
-        run: |
-          if [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
-            echo "BASE_PATH=" >> $GITHUB_ENV
-          else
-            echo "BASE_PATH=/${{ github.event.repository.name }}" >> $GITHUB_ENV
-          fi
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 113d396751d17aaeb868b824812b91972f9d1797..0cdd3415e8d0f8095d19ded9c8458b9bb83b7d9b 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -15,52 +15,58 @@ concurrency:
+   cancel-in-progress: true
+ 
+ jobs:
+   build:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v4
+ 
+       - name: Setup pnpm
+         uses: pnpm/action-setup@v3
+         with:
+           version: 9
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+         with:
+           node-version: 20
+           cache: "pnpm"
+ 
+       - name: Configure Pages
+         uses: actions/configure-pages@v5
+ 
+       - name: Set base path
+         run: |
+-          if [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
++          if [[ -n "${{ vars.CUSTOM_DOMAIN }}" ]]; then
++            echo "BASE_PATH=" >> $GITHUB_ENV
++          elif [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+             echo "BASE_PATH=" >> $GITHUB_ENV
+           else
+             echo "BASE_PATH=/${{ github.event.repository.name }}" >> $GITHUB_ENV
+           fi
+ 
+       - name: Install dependencies
+         run: pnpm install --frozen-lockfile
+ 
+       - name: Build
+         run: pnpm build
+ 
++      - name: Add CNAME for custom domain
++        if: ${{ vars.CUSTOM_DOMAIN != '' }}
++        run: echo "${{ vars.CUSTOM_DOMAIN }}" > ./out/CNAME
++
+       - name: Upload artifact
+         uses: actions/upload-pages-artifact@v3
+         with:
+           path: ./out
+ 
+   deploy:
+     runs-on: ubuntu-latest
+     needs: build
+     environment:
+       name: github-pages
+       url: ${{ steps.deployment.outputs.page_url }}
+     steps:
+       - name: Deploy
+         id: deployment
+         uses: actions/deploy-pages@v4
